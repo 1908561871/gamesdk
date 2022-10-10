@@ -1,0 +1,4 @@
+
+rootProject.name = "SdkDemo"
+include ':app'
+include ':game'
