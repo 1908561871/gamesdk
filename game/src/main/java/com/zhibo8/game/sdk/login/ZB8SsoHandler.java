@@ -9,8 +9,10 @@ import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
-import com.zhibo8.game.sdk.ZB8Constant;
-import com.zhibo8.game.sdk.ZB8Game;
+import com.zhibo8.game.sdk.base.ZB8CodeInfo;
+import com.zhibo8.game.sdk.base.ZB8Constant;
+import com.zhibo8.game.sdk.core.ZB8Game;
+import com.zhibo8.game.sdk.core.ZBGlobalConfig;
 import com.zhibo8.game.sdk.utils.CommonUtils;
 
 import org.json.JSONObject;
@@ -24,7 +26,6 @@ import org.json.JSONObject;
  */
 public class ZB8SsoHandler {
 
-    public final static int ERROR_CODE_INIT_ERROR = 0x0001; // 初始化失败
     public final static int ERROR_CODE_NOT_INSTALL = 0x0002; // 没安装
     private static final String mUri = "zhibo8://client.auth";
     private static final String PARAM_URL_PACKAGE_NAME = "package_name";
@@ -56,16 +57,10 @@ public class ZB8SsoHandler {
 
         this.authListener = listener;
         couldNotStartWbSsoActivity = false;
-        if (activity == null) {
-            if (authListener != null) {
-                authListener.onFailure(ERROR_CODE_INIT_ERROR, "传入的Activity为空");
-            }
-            return;
-        }
         try {
             Intent intent = new Intent();
             intent.setData(Uri.parse(buildUrl()));//参数拼接在URI后面 package_name使用者包名,后续参数可自行添加
-            intent.putExtra("appid", ZB8Game.getConfig().getAppId());
+            intent.putExtra("appid", ZBGlobalConfig.getInstance().getConfig().getAppId());
             if (activity instanceof Activity){
                 ((Activity)activity).startActivityForResult(intent, REQUEST_CODE);
             }else if (activity instanceof Fragment){
@@ -73,9 +68,8 @@ public class ZB8SsoHandler {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(ZB8Game.getApplication(),"请先安装最新版直播吧app",Toast.LENGTH_SHORT).show();
             if (authListener != null) {
-                authListener.onFailure(ERROR_CODE_NOT_INSTALL, "请先安装最新版直播吧app");
+                authListener.onFailure(ZB8CodeInfo.CODE_INSTALL_LATEST_ZHIBO8, ZB8CodeInfo.MSG_INSTALL_LATEST_ZHIBO8);
             }
             CommonUtils.goToMarket(ZB8Game.getApplication(), ZB8Constant.PACKAGE_NAME);
             couldNotStartWbSsoActivity = true;

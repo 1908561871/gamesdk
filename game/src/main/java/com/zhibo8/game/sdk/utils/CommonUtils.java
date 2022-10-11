@@ -16,6 +16,7 @@ public class CommonUtils {
         Uri uri = Uri.parse("market://details?id="+packageName);
         Intent goToMarket = new Intent(Intent.ACTION_VIEW, uri);
         try {
+            goToMarket.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(goToMarket);
         } catch (Exception e){
             e.printStackTrace();

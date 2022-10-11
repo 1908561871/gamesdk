@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,6 +21,7 @@ public class ZB8LoadingView extends FrameLayout {
 
     private View mLoading;
     private View mError;
+    private TextView mTvRetry;
     private OnRetryClickListener onRetryClickListener;
 
     public ZB8LoadingView(@NonNull Context context) {
@@ -47,7 +49,8 @@ public class ZB8LoadingView extends FrameLayout {
         inflate(getContext(),R.layout.zb8_loading_view,this);
         mLoading = findViewById(R.id.loading);
         mError = findViewById(R.id.error);
-        mError.setOnClickListener(new OnClickListener() {
+        mTvRetry = findViewById(R.id.tv_retry);
+        mTvRetry.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (onRetryClickListener != null){

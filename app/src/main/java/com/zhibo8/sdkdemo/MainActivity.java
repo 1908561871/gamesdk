@@ -2,11 +2,13 @@ package com.zhibo8.sdkdemo;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.zhibo8.game.sdk.ZB8Game;
-import com.zhibo8.game.sdk.ZB8RequestCallBack;
+import com.zhibo8.game.sdk.base.ZB8LoginRequestCallBack;
+import com.zhibo8.game.sdk.base.ZB8PayRequestCallBack;
+import com.zhibo8.game.sdk.core.ZB8Game;
 
 import org.json.JSONObject;
 
@@ -37,39 +39,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    int i = 40;
     private void pay() {
-        findViewById(R.id.pay).setOnClickListener(new View.OnClickListener() {
+
+        ZB8Game.pay(MainActivity.this, "GM202210101665389978" + (i++), "1", new ZB8PayRequestCallBack() {
             @Override
-            public void onClick(View v) {
-                ZB8Game.pay(MainActivity.this, "1", "1", new ZB8RequestCallBack() {
-                    @Override
-                    public void onFailure(int code, String info) {
+            public void onFailure(int code, String info) {
+                Toast.makeText(MainActivity.this,info,Toast.LENGTH_SHORT).show();
+            }
 
-                    }
+            @Override
+            public void onSuccess() {
+                Toast.makeText(MainActivity.this,"支付成功",Toast.LENGTH_SHORT).show();
+            }
 
-                    @Override
-                    public void onSuccess(JSONObject jsonObject) {
+            @Override
+            public void onCancel() {
 
-                    }
-
-                    @Override
-                    public void onCancel() {
-
-                    }
-                });
             }
         });
     }
 
     private void logout() {
         ZB8Game.logout();
+        Toast.makeText(this,"退出登录",Toast.LENGTH_SHORT).show();
     }
 
     private void login() {
-        ZB8Game.login(MainActivity.this, new ZB8RequestCallBack() {
+
+        ZB8Game.login(MainActivity.this, new ZB8LoginRequestCallBack() {
             @Override
             public void onFailure(int code, String info) {
-
+                Toast.makeText(MainActivity.this,info,Toast.LENGTH_SHORT).show();
             }
 
             @Override

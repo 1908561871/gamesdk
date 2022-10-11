@@ -2,7 +2,7 @@ package com.zhibo8.sdkdemo;
 
 import android.app.Application;
 
-import com.zhibo8.game.sdk.ZB8Game;
+import com.zhibo8.game.sdk.core.ZB8Game;
 
 /**
  * @author : ZhangWeiBo

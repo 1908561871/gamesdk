@@ -1,4 +1,4 @@
-package com.zhibo8.game.sdk;
+package com.zhibo8.game.sdk.base;
 
 /**
  * @author : ZhangWeiBo

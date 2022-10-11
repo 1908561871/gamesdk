@@ -1,6 +1,6 @@
 package com.zhibo8.game.sdk.login;
 
-import static com.zhibo8.game.sdk.ZB8Constant.BASE_URL;
+import static com.zhibo8.game.sdk.base.ZB8Constant.BASE_URL;
 
 import android.animation.ObjectAnimator;
 import android.os.Bundle;
@@ -15,13 +15,13 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.zhibo8.game.sdk.R;
-import com.zhibo8.game.sdk.ZB8CodeInfo;
-import com.zhibo8.game.sdk.ZB8Constant;
-import com.zhibo8.game.sdk.ZB8Game;
-import com.zhibo8.game.sdk.ZB8RequestCallBack;
+import com.zhibo8.game.sdk.base.ZB8CodeInfo;
+import com.zhibo8.game.sdk.base.ZB8Constant;
+import com.zhibo8.game.sdk.base.ZB8LoginRequestCallBack;
 import com.zhibo8.game.sdk.base.BaseDialogFragment;
 import com.zhibo8.game.sdk.base.ZB8LoadingLayout;
 import com.zhibo8.game.sdk.base.ZB8LoadingView;
+import com.zhibo8.game.sdk.core.ZBGlobalConfig;
 import com.zhibo8.game.sdk.net.ZB8OkHttpUtils;
 import com.zhibo8.game.sdk.utils.AnimatorUtils;
 import com.zhibo8.game.sdk.utils.DisplayUtils;
@@ -46,13 +46,13 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
     private TextView mTvPrivacy;
     private ZB8SsoHandler zhibo8SsoHandler;
     private ImageView mIvClose;
-    private ZB8RequestCallBack callBack;
+    private ZB8LoginRequestCallBack callBack;
     private View mLayoutAgreement;
     private PopupWindow mPop;
     private ZB8LoadingLayout mLoadingView;
 
 
-    public static ZB8AuthLoginFragment getInstance(){
+    public static ZB8AuthLoginFragment getInstance() {
         return new ZB8AuthLoginFragment();
     }
 
@@ -83,7 +83,6 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
     protected int getContentViewId() {
         return R.layout.zb8_dialog_auth_login;
     }
-
 
 
     /**
@@ -130,20 +129,20 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
         @Override
         public void cancel() {
             ZB8LogUtils.d("直播吧授权取消");
-            callBack.onCancel();
+            callBack.onFailure(ZB8CodeInfo.CODE_CANCEL_AUTHORIZE,ZB8CodeInfo.MSG_CANCEL_AUTHORIZE);
         }
 
         @Override
         public void onFailure(int errorCode, String errorMsg) {
             ZB8LogUtils.d("直播吧授权失败");
-            callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
+            callBack.onFailure(errorCode, errorMsg);
         }
     };
 
 
     private void getAccessToken(String code, String refresh_token) {
         mLoadingView.showLoading();
-        String appid = ZB8Game.getConfig().getAppId();
+        String appid = ZBGlobalConfig.getInstance().getConfig().getAppId();
         HashMap<String, String> map = new HashMap<>();
         if (!TextUtils.isEmpty(code)) {
             map.put("code", code);
@@ -151,7 +150,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
         if (!TextUtils.isEmpty(refresh_token)) {
             map.put("refresh_token", refresh_token);
             map.put("grant_type", "refresh_token");
-        }else {
+        } else {
             map.put("grant_type", "authorization_code");
         }
         map.put("appid", appid);
@@ -173,12 +172,13 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                         String access_token = data.optString("access_token");
                         String refresh_token = data.optString("refresh_token");
                         getUserInfo(access_token, refresh_token);
-                        return;
                     }
+                } else {
+                    showError();
+                    ZB8LogUtils.d("授权失败");
+                    callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
                 }
-                showError();
-                ZB8LogUtils.d("授权失败");
-                callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
+
             }
         });
     }
@@ -187,7 +187,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
         mLoadingView.showLoading();
         Map<String, String> map = new HashMap<>();
         map.put("access_token", access_token);
-        map.put("appid", ZB8Game.getConfig().getAppId());
+        map.put("appid", ZBGlobalConfig.getInstance().getConfig().getAppId());
 
         ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/api/m_game_auth/userInfo", map, new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
@@ -213,21 +213,22 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                                 + " token = " + access_token
                                 + " nickname = " + data.optString("nickname")
                                 + " pic = " + data.optString("pic")
-                                + " uid = " + data.optString("uid")
+                                + " open_id = " + data.optString("open_id")
                         );
                         callBack.onSuccess(wrapper);
-                        return;
                     }
+                } else {
+                    showError();
+                    ZB8LogUtils.d("获取用户信息失败");
+                    callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
                 }
-                showError();
-                ZB8LogUtils.d("获取用户信息失败");
-                callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
+
             }
         });
     }
 
 
-    public void setCallBack(ZB8RequestCallBack callBack) {
+    public void setCallBack(ZB8LoginRequestCallBack callBack) {
         this.callBack = callBack;
     }
 
@@ -244,7 +245,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                 zhibo8SsoHandler.authorize(authListener);
             }
         } else if (v == mIvClose) {
-            getActivity().finish();
+            callBack.onCancel();
         }
     }
 
@@ -276,7 +277,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
         ZB8OkHttpUtils.getInstance().doPost(ZB8Constant.BASE_URL + "/api/m_game_auth/page", null, new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
             public void failure(Exception e) {
-                showError();
+                mLoadingView.showError();
             }
 
             @Override
@@ -312,10 +313,10 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
         }
     }
 
-    private void showError(){
-        if (ZB8LoginManager.getInstance().hasLogin()){
+    private void showError() {
+        if (ZB8LoginManager.getInstance().hasLogin()) {
             mLoadingView.showError();
-        }else {
+        } else {
             mLoadingView.showContent();
         }
     }

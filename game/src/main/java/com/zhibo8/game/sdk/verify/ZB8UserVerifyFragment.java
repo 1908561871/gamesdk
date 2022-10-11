@@ -1,8 +1,7 @@
 package com.zhibo8.game.sdk.verify;
 
-import static com.zhibo8.game.sdk.ZB8Constant.BASE_URL;
+import static com.zhibo8.game.sdk.base.ZB8Constant.BASE_URL;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -14,16 +13,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.zhibo8.game.sdk.R;
-import com.zhibo8.game.sdk.ZB8CodeInfo;
-import com.zhibo8.game.sdk.ZB8Game;
-import com.zhibo8.game.sdk.ZB8RequestCallBack;
-import com.zhibo8.game.sdk.base.BaseDialog;
+import com.zhibo8.game.sdk.base.ZB8CodeInfo;
+import com.zhibo8.game.sdk.base.ZB8LoginRequestCallBack;
 import com.zhibo8.game.sdk.base.BaseDialogFragment;
 import com.zhibo8.game.sdk.base.ZB8LoadingLayout;
 import com.zhibo8.game.sdk.base.ZB8LoadingView;
-import com.zhibo8.game.sdk.bean.ZBOrderInfo;
+import com.zhibo8.game.sdk.core.ZBGlobalConfig;
 import com.zhibo8.game.sdk.net.ZB8OkHttpUtils;
-import com.zhibo8.game.sdk.pay.ZB8PayDetailFragment;
 import com.zhibo8.game.sdk.utils.ZB8LogUtils;
 
 import org.json.JSONException;
@@ -45,7 +41,7 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
     private EditText mEtUserName;
     private TextView mTvSubmit;
 
-    private ZB8RequestCallBack callBack;
+    private ZB8LoginRequestCallBack callBack;
     private ImageView mIvClose;
     private ZB8LoadingLayout mLoadingView;
     private JSONObject mJsonEntity;
@@ -95,7 +91,7 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
         if (v == mTvSubmit) {
             submitInfo(mEtUserIdentify.getText().toString(), mEtUserName.getText().toString(), mToken);
         } else if (v == mIvClose) {
-            getActivity().finish();
+            callBack.onCancel();
         }
     }
 
@@ -106,7 +102,7 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
         mLoadingView.showLoading();
         Map<String, String> map = new HashMap<>();
         map.put("access_token", mToken);
-        map.put("appid", ZB8Game.getConfig().getAppId());
+        map.put("appid", ZBGlobalConfig.getInstance().getConfig().getAppId());
         ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/sdk/m_game/isAuth", map, new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
             public void failure(Exception e) {
@@ -130,7 +126,6 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
                                 //未成年
                                 ZB8LogUtils.d("用户认证成功，用户未成年");
                                 callBack.onFailure(ZB8CodeInfo.CODE_TEENAGER_PROTECT,ZB8CodeInfo.MSG_CODE_TEENAGER_PROTECT);
-                                Toast.makeText(getActivity(),"未成年暂时无法体验游戏,拦截用户进入游戏",Toast.LENGTH_SHORT).show();
                             }
                         } else {
                             mLoadingView.showContent();
@@ -166,7 +161,7 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
         map.put("access_token", access_token);
         map.put("identify", identify);
         map.put("real_name", userName);
-        map.put("appid", ZB8Game.getConfig().getAppId());
+        map.put("appid", ZBGlobalConfig.getInstance().getConfig().getAppId());
         ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/sdk/m_game/auth", map, new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
             public void failure(Exception e) {
@@ -187,7 +182,6 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
                         //未成年
                         ZB8LogUtils.d("用户认证成功，用户未成年");
                         callBack.onFailure(ZB8CodeInfo.CODE_TEENAGER_PROTECT,ZB8CodeInfo.MSG_CODE_TEENAGER_PROTECT);
-                        Toast.makeText(getActivity(),"未成年暂时无法体验游戏,拦截用户进入游戏",Toast.LENGTH_SHORT).show();
                     }
                 }else {
                     String msg = jsonObject.optString("msg");
@@ -202,7 +196,7 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
     }
 
 
-    public void setCallBack(ZB8RequestCallBack callBack) {
+    public void setCallBack(ZB8LoginRequestCallBack callBack) {
         this.callBack = callBack;
     }
 

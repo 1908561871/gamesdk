@@ -8,6 +8,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -18,14 +19,14 @@ import com.tencent.mm.opensdk.modelpay.PayReq;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
 import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 import com.zhibo8.game.sdk.R;
-import com.zhibo8.game.sdk.ZB8CodeInfo;
-import com.zhibo8.game.sdk.ZB8Constant;
-import com.zhibo8.game.sdk.ZB8Game;
-import com.zhibo8.game.sdk.ZB8RequestCallBack;
 import com.zhibo8.game.sdk.base.BaseDialogFragment;
+import com.zhibo8.game.sdk.base.ZB8CodeInfo;
+import com.zhibo8.game.sdk.base.ZB8Constant;
 import com.zhibo8.game.sdk.base.ZB8LoadingLayout;
 import com.zhibo8.game.sdk.base.ZB8LoadingView;
+import com.zhibo8.game.sdk.base.ZB8PayRequestCallBack;
 import com.zhibo8.game.sdk.bean.ZBOrderInfo;
+import com.zhibo8.game.sdk.core.ZBGlobalConfig;
 import com.zhibo8.game.sdk.login.ZB8LoginManager;
 import com.zhibo8.game.sdk.net.ZB8OkHttpUtils;
 import com.zhibo8.game.sdk.pay.wechat.WXPayManager;
@@ -53,16 +54,16 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
     private RecyclerView mRvPayMode;
     private ImageView mIvClose;
 
-    private ZB8RequestCallBack callBack;
+    private ZB8PayRequestCallBack callBack;
     private ZB8LoadingLayout mLoadingView;
     private JSONObject mPay;
     private TextView mTvTitle;
 
 
-    public static ZB8PayDetailFragment getInstance(ZBOrderInfo orderInfo){
+    public static ZB8PayDetailFragment getInstance(ZBOrderInfo orderInfo) {
         ZB8PayDetailFragment fragment = new ZB8PayDetailFragment();
         Bundle bundle = new Bundle();
-        bundle.putParcelable("order",orderInfo);
+        bundle.putParcelable("order", orderInfo);
         fragment.setArguments(bundle);
         return fragment;
     }
@@ -101,16 +102,15 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
                 clickPay();
             }
         } else if (v == mIvClose) {
-            getActivity().finish();
+            callBack.onCancel();
         }
     }
-
 
 
     WXPayManager.OnWXPayCallBackListener onWXPayCallBackListener = new WXPayManager.OnWXPayCallBackListener() {
         @Override
         public void onSuccess() {
-            callBack.onSuccess(new JSONObject());
+            callBack.onSuccess();
         }
 
 
@@ -121,41 +121,39 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
 
         @Override
         public void onCancel() {
-            callBack.onCancel();
+            callBack.onFailure(ZB8CodeInfo.CODE_CANCEL_PAY, ZB8CodeInfo.MSG_CANCEL_PAY);
         }
     };
 
 
     private void clickPay() {
-        JSONObject style = mPay.optJSONObject("style");
+        mTvPay.setEnabled(false);
         Map<String, String> map = new HashMap<>();
         map.put("os", "android");
-        if (style != null) {
-            map.put("pay_type", style.optString("type"));
-        }
-        map.put("app_id", "2001");
-//        map.put("price", mPay.optString("price"));
-//        map.put("order_no", mPay.optString("order_no"));
-        map.put("price", "1");
-        map.put("order_no", "GM202210101665389978");
+        map.put("type", mPayModeAdapter.getPayType());
+        map.put("appid", ZBGlobalConfig.getInstance().getConfig().getAppId());
+        map.put("price", mPay.optString("price"));
+        map.put("order_no", mPay.optString("order_no"));
         map.put("access_token", ZB8LoginManager.getInstance().getToken());
         ZB8OkHttpUtils.getInstance().doPost(ZB8Constant.BASE_URL + "/sdk/m_game/pay", map, new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
             public void failure(Exception e) {
+                mTvPay.setEnabled(true);
                 ZB8LogUtils.d("点击支付失败：" + e.getMessage());
                 callBack.onFailure(ZB8CodeInfo.CODE_PAY_FAILURE, ZB8CodeInfo.MSG_PAY_FAILURE);
             }
 
             @Override
             public void success(String json) throws Exception {
+                mTvPay.setEnabled(true);
                 JSONObject jsonObject = new JSONObject(json);
                 JSONObject data = jsonObject.optJSONObject("data");
                 if (data != null && TextUtils.equals(jsonObject.optString("status"), "success")) {
                     String payType = data.optString("pay_type");
                     String payContent = data.optString("pay_content");
-                    if (TextUtils.equals("alipay", payType)) {
+                    if (TextUtils.equals("alipay_app", payType)) {
                         toAliPay(payContent);
-                    } else if (TextUtils.equals("wechat", payType)) {
+                    } else if (TextUtils.equals("weixin_app", payType)) {
                         toWechatPay(payContent);
                     }
                 }
@@ -171,14 +169,13 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
         map.put("out_trade_no", orderInfo.getOrder());
         map.put("price", orderInfo.getPrice());
         map.put("os", "android");
-        map.put("app_id", ZB8Game.getConfig().getAppId());
+        map.put("appid", ZBGlobalConfig.getInstance().getConfig().getAppId());
         map.put("access_token", ZB8LoginManager.getInstance().getToken());
         ZB8OkHttpUtils.getInstance().doPost(ZB8Constant.BASE_URL + "/sdk/m_game/order", map, new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
             public void failure(Exception e) {
                 mLoadingView.showError();
                 ZB8LogUtils.d("获取商品订单失败：" + e.getMessage());
-                callBack.onFailure(ZB8CodeInfo.CODE_GET_GOODS_FAILURE, ZB8CodeInfo.MSG_GET_GOODS_FAILURE);
             }
 
             @Override
@@ -199,10 +196,11 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
                             }
                         }
                         mLoadingView.showContent();
-                        return;
                     }
+                } else {
+                    ZB8LogUtils.d("获取商品订单失败：" + json);
+                    mLoadingView.showError();
                 }
-                mLoadingView.showError();
             }
         });
     }
@@ -218,9 +216,9 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
             String resultStatus = result.get("resultStatus");
             // 判断resultStatus 为“9000”则代表支付成功，具体状态码代表含义可参考接口文档
             if (TextUtils.equals(resultStatus, "9000")) {
-                callBack.onSuccess(new JSONObject());
+                callBack.onSuccess();
             } else if (TextUtils.equals(resultStatus, "6001")) {
-                callBack.onCancel();
+                callBack.onFailure(ZB8CodeInfo.CODE_CANCEL_PAY, ZB8CodeInfo.MSG_CANCEL_PAY);
             } else {
                 callBack.onFailure(ZB8CodeInfo.CODE_PAY_FAILURE, ZB8CodeInfo.MSG_PAY_FAILURE);
             }
@@ -247,18 +245,18 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
 
 
     private void toWechatPay(String content) {
-
         ZB8LogUtils.d("开始微信支付");
         try {
             JSONObject jsonObject = new JSONObject(content);
-            IWXAPI api = WXAPIFactory.createWXAPI(getActivity(), jsonObject.optString("appId"), false);
+            IWXAPI api = WXAPIFactory.createWXAPI(getActivity(), "", false);
+            api.registerApp("");
             PayReq payReq = new PayReq();
-            payReq.appId = jsonObject.optString("appId");
-            payReq.partnerId = jsonObject.optString("partnerId");
-            payReq.prepayId = jsonObject.optString("prepayId");
-            payReq.nonceStr = jsonObject.optString("nonceStr");
-            payReq.timeStamp = jsonObject.optString("timeStamp");
-            payReq.packageValue = jsonObject.optString("packageValue");
+            payReq.appId = jsonObject.optString("appid");
+            payReq.partnerId = jsonObject.optString("partnerid");
+            payReq.prepayId = jsonObject.optString("prepayid");
+            payReq.nonceStr = jsonObject.optString("noncestr");
+            payReq.timeStamp = jsonObject.optString("timestamp");
+            payReq.packageValue = jsonObject.optString("package");
             payReq.sign = jsonObject.optString("sign");
             payReq.extData = jsonObject.optString("extData");
             payReq.signType = jsonObject.optString("signType");
@@ -270,10 +268,9 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
     }
 
 
-    public void setCallBack(ZB8RequestCallBack callBack) {
+    public void setCallBack(ZB8PayRequestCallBack callBack) {
         this.callBack = callBack;
     }
-
 
 
     @Override

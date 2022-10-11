@@ -83,4 +83,9 @@ public class ZB8PayModeAdapter extends RecyclerView.Adapter<ZB8PayModeAdapter.Vi
     public int getCurrentItem() {
         return index;
     }
+
+
+    public String getPayType(){
+       return jsonArray.optJSONObject(index).optString("type");
+    }
 }

@@ -1,7 +1,13 @@
-package com.zhibo8.game.sdk;
+package com.zhibo8.game.sdk.core;
 
 import android.content.Context;
 
+import com.zhibo8.game.sdk.base.ZB8CodeInfo;
+import com.zhibo8.game.sdk.base.ZB8Constant;
+import com.zhibo8.game.sdk.base.ZB8ContainerActivity;
+import com.zhibo8.game.sdk.base.ZB8LoginProxyRequestCallBack;
+import com.zhibo8.game.sdk.base.ZB8LoginRequestCallBack;
+import com.zhibo8.game.sdk.base.ZB8PayRequestCallBack;
 import com.zhibo8.game.sdk.bean.ZBOrderInfo;
 import com.zhibo8.game.sdk.login.ZB8LoginManager;
 import com.zhibo8.game.sdk.utils.ZB8LogUtils;
@@ -15,20 +21,15 @@ import com.zhibo8.game.sdk.utils.ZB8SPUtils;
  */
 public class ZB8Game {
 
-    private static ZB8RequestCallBack requestCallBack;
-
-    private static Config config;
-
     private static boolean isInit;
-
     private static Context application;
 
 
     private static void init(Context context, Config config) {
         if (!isInit) {
             ZB8Game.isInit = true;
-            ZB8Game.config = config;
-            ZB8Game.application = context.getApplicationContext();
+            ZBGlobalConfig.getInstance().setConfig(config);
+            application = context.getApplicationContext();
             ZB8SPUtils.init(context);
             if (config != null) {
                 ZB8LogUtils.isDebug(config.debug);
@@ -41,12 +42,12 @@ public class ZB8Game {
     }
 
 
-    public static void login(Context context, ZB8RequestCallBack callBack) {
+    public static void login(Context context, ZB8LoginRequestCallBack callBack) {
         if (!isInit) {
             callBack.onFailure(ZB8CodeInfo.CODE_UNINITIALIZED, ZB8CodeInfo.MSG_UNINITIALIZED);
             return;
         }
-        requestCallBack = new ZB8LoginProxyRequestCallBack(callBack);
+        ZBGlobalConfig.getInstance().setLoginRequestCallBack(new ZB8LoginProxyRequestCallBack(callBack));
         ZB8ContainerActivity.open(context, ZB8Constant.TYPE_AUTHOR);
     }
 
@@ -55,36 +56,21 @@ public class ZB8Game {
     }
 
 
-    public static void pay(Context context, String order, String price, ZB8RequestCallBack callBack) {
+    public static void pay(Context context, String order, String price, ZB8PayRequestCallBack callBack) {
         if (!isInit) {
             callBack.onFailure(ZB8CodeInfo.CODE_UNINITIALIZED, ZB8CodeInfo.MSG_UNINITIALIZED);
             return;
         }
-        requestCallBack = callBack;
+        ZBGlobalConfig.getInstance().setPayRequestCallBack(callBack);
         ZBOrderInfo orderInfo = new ZBOrderInfo();
         orderInfo.setOrder(order);
         orderInfo.setPrice(price);
         ZB8ContainerActivity.open(context, ZB8Constant.TYPE_PAY, orderInfo);
     }
 
-    public static Config getConfig() {
-        return config;
-    }
-
-    public static boolean isIsInit() {
-        return isInit;
-    }
 
     public static Context getApplication() {
         return application;
-    }
-
-    public static ZB8RequestCallBack getRequestCallBack() {
-        return requestCallBack;
-    }
-
-    public static void setRequestCallBack(ZB8RequestCallBack requestCallBack) {
-        ZB8Game.requestCallBack = requestCallBack;
     }
 
     public static class Config {

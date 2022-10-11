@@ -1,15 +1,16 @@
-package com.zhibo8.game.sdk;
+package com.zhibo8.game.sdk.base;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.zhibo8.game.sdk.core.ZB8Game;
 import com.zhibo8.game.sdk.bean.ZBOrderInfo;
+import com.zhibo8.game.sdk.core.ZBGlobalConfig;
 import com.zhibo8.game.sdk.login.ZB8AuthLoginFragment;
 import com.zhibo8.game.sdk.login.ZB8LoginManager;
 import com.zhibo8.game.sdk.login.ZB8SsoHandler;
@@ -19,6 +20,8 @@ import com.zhibo8.game.sdk.utils.CommonUtils;
 import com.zhibo8.game.sdk.verify.ZB8UserVerifyFragment;
 
 import org.json.JSONObject;
+
+import java.io.PipedReader;
 
 /**
  * @author : ZhangWeiBo
@@ -31,7 +34,8 @@ public class ZB8ContainerActivity extends AppCompatActivity {
     private int mType;
     private ZBOrderInfo mOrderInfo;
 
-    private ZB8RequestCallBack callBack;
+    private ZB8LoginRequestCallBack loginCallBack;
+    private ZB8PayRequestCallBack payCallBack;
 
     private ZB8SsoHandler zhibo8SsoHandler;
 
@@ -58,13 +62,25 @@ public class ZB8ContainerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        init();
+    }
+
+    private void init(){
         mType = getIntent().getIntExtra("type", -1);
         mOrderInfo = getIntent().getParcelableExtra("order");
-        callBack = ZB8Game.getRequestCallBack();
-        ZB8Game.setRequestCallBack(null);
+        loginCallBack = ZBGlobalConfig.getInstance().getLoginRequestCallBack();
+        ZBGlobalConfig.getInstance().setLoginRequestCallBack(null);
+        payCallBack = ZBGlobalConfig.getInstance().getPayRequestCallBack();
+        ZBGlobalConfig.getInstance().setPayRequestCallBack(null);
         if (mType == ZB8Constant.TYPE_PAY) {
+            if (payCallBack == null){
+                payCallBack = new CallbackAdapter.PayCallBackAdapter();
+            }
             toPay();
         } else if (mType == ZB8Constant.TYPE_AUTHOR) {
+            if (loginCallBack == null){
+                loginCallBack = new CallbackAdapter.LoginCallbackAdapter();
+            }
             toAuthorize();
         }
     }
@@ -75,12 +91,12 @@ public class ZB8ContainerActivity extends AppCompatActivity {
         if (AppUtils.isInstall(this, ZB8Constant.PACKAGE_NAME)) {
             ZB8AuthLoginFragment zb8AuthLoginFragment = ZB8AuthLoginFragment.getInstance();
             zb8AuthLoginFragment.setZhibo8SsoHandler(zhibo8SsoHandler);
-            zb8AuthLoginFragment.setCallBack(new ZB8RequestCallBack() {
+            zb8AuthLoginFragment.setCallBack(new ZB8LoginRequestCallBack() {
                 @Override
                 public void onSuccess(JSONObject json) {
                     zb8AuthLoginFragment.dismiss();
                     if (ZB8LoginManager.getInstance().hasLogin()){
-                        callBack.onSuccess(json);
+                        loginCallBack.onSuccess(json);
                         finish();
                     }else {
                         toVerify(json);
@@ -89,21 +105,19 @@ public class ZB8ContainerActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(int code, String info) {
-                    Toast.makeText(ZB8Game.getApplication(), "授权失败，请稍后再试", Toast.LENGTH_SHORT).show();
-                    callBack.onFailure(code, info);
+                    loginCallBack.onFailure(code, info);
                 }
 
                 @Override
                 public void onCancel() {
-                    callBack.onCancel();
-                    Toast.makeText(ZB8Game.getApplication(), "用户取消授权", Toast.LENGTH_SHORT).show();
+                    loginCallBack.onCancel();
+                    finish();
                 }
             });
             zb8AuthLoginFragment.show(getSupportFragmentManager(),"authorize");
         } else {
-            Toast.makeText(ZB8Game.getApplication(), "请安装最新版本直播吧app", Toast.LENGTH_SHORT).show();
             CommonUtils.goToMarket(this, ZB8Constant.PACKAGE_NAME);
-            callBack.onFailure(ZB8CodeInfo.CODE_NOT_INSTALL, ZB8CodeInfo.MSG_NOT_INSTALL);
+            loginCallBack.onFailure(ZB8CodeInfo.CODE_INSTALL_LATEST_ZHIBO8, ZB8CodeInfo.MSG_INSTALL_LATEST_ZHIBO8);
             finish();
         }
     }
@@ -111,23 +125,22 @@ public class ZB8ContainerActivity extends AppCompatActivity {
 
     private void toPay() {
         ZB8PayDetailFragment zb8PayDetailFragment =ZB8PayDetailFragment.getInstance(mOrderInfo);
-        zb8PayDetailFragment.setCallBack(new ZB8RequestCallBack() {
+        zb8PayDetailFragment.setCallBack(new ZB8PayRequestCallBack() {
             @Override
             public void onFailure(int code, String info) {
-                Toast.makeText(ZB8Game.getApplication(), "支付失败", Toast.LENGTH_SHORT).show();
-                callBack.onFailure(code, info);
+                payCallBack.onFailure(code, info);
             }
 
             @Override
-            public void onSuccess(JSONObject jsonObject) {
-                callBack.onSuccess(jsonObject);
+            public void onSuccess() {
+                payCallBack.onSuccess();
                 finish();
             }
 
             @Override
             public void onCancel() {
-                callBack.onCancel();
-                Toast.makeText(ZB8Game.getApplication(), "支付失败", Toast.LENGTH_SHORT).show();
+                payCallBack.onCancel();
+                finish();
             }
         });
         zb8PayDetailFragment.show(getSupportFragmentManager(),"pay");
@@ -135,22 +148,22 @@ public class ZB8ContainerActivity extends AppCompatActivity {
 
     private void toVerify(JSONObject jsonObject) {
         ZB8UserVerifyFragment zb8UserVerifyDialog = ZB8UserVerifyFragment.getInstance(jsonObject);
-        zb8UserVerifyDialog.setCallBack(new ZB8RequestCallBack() {
+        zb8UserVerifyDialog.setCallBack(new ZB8LoginRequestCallBack() {
             @Override
             public void onFailure(int code, String info) {
-                Toast.makeText(ZB8Game.getApplication(), "认证失败，请稍后再试", Toast.LENGTH_SHORT).show();
-                callBack.onFailure(code, info);
+                loginCallBack.onFailure(code, info);
             }
 
             @Override
             public void onSuccess(JSONObject jsonObject) {
-                callBack.onSuccess(jsonObject);
+                loginCallBack.onSuccess(jsonObject);
                 finish();
             }
 
             @Override
             public void onCancel() {
-                callBack.onCancel();
+                loginCallBack.onCancel();
+                finish();
             }
         });
         zb8UserVerifyDialog.show(getSupportFragmentManager(),"verify");

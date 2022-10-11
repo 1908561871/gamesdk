@@ -3,7 +3,7 @@ package com.zhibo8.game.sdk.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.zhibo8.game.sdk.ZB8Constant;
+import com.zhibo8.game.sdk.base.ZB8Constant;
 
 /**
  * @author : ZhangWeiBo

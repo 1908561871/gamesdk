@@ -1,4 +1,4 @@
-package com.zhibo8.game.sdk;
+package com.zhibo8.game.sdk.base;
 
 import com.zhibo8.game.sdk.login.ZB8LoginManager;
 
@@ -10,10 +10,10 @@ import org.json.JSONObject;
  * email : 1908561871@qq.com
  * description : TODO
  */
-public class ZB8LoginProxyRequestCallBack implements ZB8RequestCallBack {
-    private ZB8RequestCallBack callBack;
+public class ZB8LoginProxyRequestCallBack implements ZB8LoginRequestCallBack {
+    private ZB8LoginRequestCallBack callBack;
 
-    public ZB8LoginProxyRequestCallBack(ZB8RequestCallBack callBack) {
+    public ZB8LoginProxyRequestCallBack(ZB8LoginRequestCallBack callBack) {
         this.callBack = callBack;
     }
 
