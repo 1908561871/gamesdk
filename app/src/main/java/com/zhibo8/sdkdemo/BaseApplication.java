@@ -18,7 +18,7 @@ public class BaseApplication extends Application {
         //初始化
         ZB8Game.builder()
                 .setAppId("zqxzc1d2ez")
-                .setServerKey("test123123")
+                .setAppSecret("test123123")
                 .setDebug(true)
                 .init(this);
     }

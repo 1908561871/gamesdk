@@ -1,15 +1,11 @@
 package com.zhibo8.game.sdk.net;
 
-import android.nfc.Tag;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
-import android.util.ArrayMap;
 
-import com.zhibo8.game.sdk.core.ZB8Game;
 import com.zhibo8.game.sdk.core.ZBGlobalConfig;
 import com.zhibo8.game.sdk.utils.MD5Utils;
-import com.zhibo8.game.sdk.utils.ZB8LogUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -154,7 +150,7 @@ public class ZB8OkHttpUtils {
     public  static  String encryptParams(Map<String, String> params){
         // 3、将参数和公共参数合并到一个Map
         Map<String, String> signParams = new HashMap<>(params);
-        signParams.put("pass", ZBGlobalConfig.getInstance().getConfig().getServerKey());
+        signParams.put("pass", ZBGlobalConfig.getInstance().getConfig().getAppSecret());
 
         // 4、根据key值排序参数
         List<String> keyList = new ArrayList<>(signParams.keySet());

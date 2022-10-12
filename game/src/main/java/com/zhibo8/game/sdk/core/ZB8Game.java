@@ -76,7 +76,7 @@ public class ZB8Game {
 
     public static class Config {
         String appId;
-        String serverKey;
+        String appSecret;
         boolean debug;
 
         public Config setAppId(String appId) {
@@ -90,12 +90,12 @@ public class ZB8Game {
             return this;
         }
 
-        public String getServerKey() {
-            return serverKey;
+        public String getAppSecret() {
+            return appSecret;
         }
 
-        public Config setServerKey(String serverKey) {
-            this.serverKey = serverKey;
+        public Config setAppSecret(String appSecret) {
+            this.appSecret = appSecret;
             return this;
         }
 
@@ -113,7 +113,7 @@ public class ZB8Game {
             if (TextUtils.isEmpty(appId)){
                 throw new  IllegalArgumentException("appid 不能为空");
             }
-            if (TextUtils.isEmpty(serverKey)){
+            if (TextUtils.isEmpty(appSecret)){
                 throw new  IllegalArgumentException("serverKey 不能为空");
             }
             ZB8Game.init(context, this);
