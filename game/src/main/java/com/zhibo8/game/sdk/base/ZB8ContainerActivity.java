@@ -3,6 +3,7 @@ package com.zhibo8.game.sdk.base;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
@@ -178,5 +179,6 @@ public class ZB8ContainerActivity extends AppCompatActivity {
             zhibo8SsoHandler.authorizeCallBack(requestCode, resultCode, data);
         }
     }
+
 
 }

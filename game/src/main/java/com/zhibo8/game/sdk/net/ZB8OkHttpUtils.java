@@ -1,10 +1,13 @@
 package com.zhibo8.game.sdk.net;
 
+import android.nfc.Tag;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.ArrayMap;
 
+import com.zhibo8.game.sdk.core.ZB8Game;
+import com.zhibo8.game.sdk.core.ZBGlobalConfig;
 import com.zhibo8.game.sdk.utils.MD5Utils;
 import com.zhibo8.game.sdk.utils.ZB8LogUtils;
 
@@ -67,12 +70,12 @@ public class ZB8OkHttpUtils {
     }
 
     public interface OkHttpCallBackListener {
-        void failure(Exception e);
+        void failure(Exception e) throws Exception;
 
         void success(String json) throws Exception;
     }
 
-    public void doPost(String path, Map<String, String> map, final OkHttpCallBackListener callBackListener) {
+    public void doPost(String path, Map<String, String> map, Object tag,final OkHttpCallBackListener callBackListener) {
         if (map == null){
             map = new HashMap<>();
         }
@@ -93,6 +96,7 @@ public class ZB8OkHttpUtils {
         Request request = new Request.Builder()
                 .post(formBody)
                 .url(path)
+                .tag(tag)
                 .build();
 
         Call call = mClient.newCall(request);
@@ -100,7 +104,9 @@ public class ZB8OkHttpUtils {
         call.enqueue(new Callback() {
             @Override
             public void onFailure(Call call, final IOException e) {
-                sendFailure(e, callBackListener);
+                if (!call.isCanceled()){
+                    sendFailure(e, callBackListener);
+                }
             }
 
             @Override
@@ -123,7 +129,7 @@ public class ZB8OkHttpUtils {
                 try {
                     callBack.success(data);
                 } catch (Exception e) {
-                    callBack.failure(e);
+                    sendFailure(e,callBack);
                     e.printStackTrace();
                 }
             }
@@ -135,7 +141,11 @@ public class ZB8OkHttpUtils {
         mHandler.post(new Runnable() {
             @Override
             public void run() {
-                callBack.failure(e);
+                try {
+                    callBack.failure(e);
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
             }
         });
     }
@@ -144,7 +154,7 @@ public class ZB8OkHttpUtils {
     public  static  String encryptParams(Map<String, String> params){
         // 3、将参数和公共参数合并到一个Map
         Map<String, String> signParams = new HashMap<>(params);
-        signParams.put("pass", "test123123");
+        signParams.put("pass", ZBGlobalConfig.getInstance().getConfig().getServerKey());
 
         // 4、根据key值排序参数
         List<String> keyList = new ArrayList<>(signParams.keySet());
@@ -162,7 +172,21 @@ public class ZB8OkHttpUtils {
             }
         }
         String paramsStr = aSign.toString().replaceFirst("&", "");
-        ZB8LogUtils.d("paramsStr:"+paramsStr);
         return MD5Utils.getMD5(paramsStr);
+    }
+
+    public  void cancelAll(Object tag){
+
+        for (Call call : mClient.dispatcher().queuedCalls()) {
+            if (call.request().tag() == tag){
+                call.cancel();
+            }
+        }
+
+        for (Call call : mClient.dispatcher().runningCalls()) {
+            if (call.request().tag() == tag){
+                call.cancel();
+            }
+        }
     }
 }

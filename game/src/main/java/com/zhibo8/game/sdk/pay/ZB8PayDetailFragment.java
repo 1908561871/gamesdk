@@ -135,9 +135,9 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
         map.put("price", mPay.optString("price"));
         map.put("order_no", mPay.optString("order_no"));
         map.put("access_token", ZB8LoginManager.getInstance().getToken());
-        ZB8OkHttpUtils.getInstance().doPost(ZB8Constant.BASE_URL + "/sdk/m_game/pay", map, new ZB8OkHttpUtils.OkHttpCallBackListener() {
+        ZB8OkHttpUtils.getInstance().doPost(ZB8Constant.BASE_URL + "/sdk/m_game/pay", map, getRequestTag(),new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
-            public void failure(Exception e) {
+            public void failure(Exception e) throws Exception{
                 mTvPay.setEnabled(true);
                 ZB8LogUtils.d("点击支付失败：" + e.getMessage());
                 callBack.onFailure(ZB8CodeInfo.CODE_PAY_FAILURE, ZB8CodeInfo.MSG_PAY_FAILURE);
@@ -156,8 +156,10 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
                     } else if (TextUtils.equals("weixin_app", payType)) {
                         toWechatPay(payContent);
                     }
+                    return;
                 }
-
+                ZB8LogUtils.d("点击支付失败：" + json);
+                callBack.onFailure(ZB8CodeInfo.CODE_PAY_FAILURE, ZB8CodeInfo.MSG_PAY_FAILURE);
             }
         });
     }
@@ -171,11 +173,12 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
         map.put("os", "android");
         map.put("appid", ZBGlobalConfig.getInstance().getConfig().getAppId());
         map.put("access_token", ZB8LoginManager.getInstance().getToken());
-        ZB8OkHttpUtils.getInstance().doPost(ZB8Constant.BASE_URL + "/sdk/m_game/order", map, new ZB8OkHttpUtils.OkHttpCallBackListener() {
+        ZB8OkHttpUtils.getInstance().doPost(ZB8Constant.BASE_URL + "/sdk/m_game/order", map,getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
-            public void failure(Exception e) {
-                mLoadingView.showError();
+            public void failure(Exception e) throws Exception{
                 ZB8LogUtils.d("获取商品订单失败：" + e.getMessage());
+                callBack.onFailure(ZB8CodeInfo.CODE_GOODS_INFO_FAILURE, ZB8CodeInfo.MSG_GOODS_INFO_FAILURE);
+                mLoadingView.showError();
             }
 
             @Override
@@ -196,11 +199,12 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
                             }
                         }
                         mLoadingView.showContent();
+                        return;
                     }
-                } else {
-                    ZB8LogUtils.d("获取商品订单失败：" + json);
-                    mLoadingView.showError();
                 }
+                ZB8LogUtils.d("获取商品订单失败：" + json);
+                callBack.onFailure(ZB8CodeInfo.CODE_GOODS_INFO_FAILURE, ZB8CodeInfo.MSG_GOODS_INFO_FAILURE);
+                mLoadingView.showError();
             }
         });
     }
@@ -249,6 +253,10 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
         try {
             JSONObject jsonObject = new JSONObject(content);
             IWXAPI api = WXAPIFactory.createWXAPI(getActivity(), "", false);
+            if (!api.isWXAppInstalled()){
+
+                return;
+            }
             api.registerApp("");
             PayReq payReq = new PayReq();
             payReq.appId = jsonObject.optString("appid");

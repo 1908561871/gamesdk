@@ -14,6 +14,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
+import com.zhibo8.game.sdk.net.ZB8OkHttpUtils;
+
 /**
  * @author : ZhangWeiBo
  * date : 2022/10/09
@@ -21,6 +23,8 @@ import androidx.fragment.app.DialogFragment;
  * description : TODO
  */
 public abstract class BaseDialogFragment extends DialogFragment implements View.OnClickListener {
+
+
 
     @Nullable
     @Override
@@ -32,7 +36,6 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
             // 铺满全屏
             window.getDecorView().setPadding(0, 0, 0, 0);
             WindowManager.LayoutParams lp = window.getAttributes();
-           // lp.height = WindowManager.LayoutParams.MATCH_PARENT;
             lp.gravity = Gravity.CENTER;
             window.setAttributes(lp);
             getDialog().requestWindowFeature(STYLE_NO_TITLE);
@@ -57,4 +60,14 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
     protected abstract int getContentViewId();
 
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        ZB8OkHttpUtils.getInstance().cancelAll(getRequestTag());
+    }
+
+
+    protected Object getRequestTag(){
+        return this;
+    }
 }

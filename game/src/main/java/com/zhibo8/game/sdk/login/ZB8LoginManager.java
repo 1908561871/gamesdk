@@ -22,7 +22,8 @@ public class ZB8LoginManager {
 
     }
 
-    public void login(String token,String refresh_token) {
+
+    public void login(String token, String refresh_token) {
         ZB8SPUtils.putString("access_token", token);
         ZB8SPUtils.putString("refresh_token", refresh_token);
     }

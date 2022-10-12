@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    int i = 40;
+    int i = 240;
     private void pay() {
 
         ZB8Game.pay(MainActivity.this, "GM202210101665389978" + (i++), "1", new ZB8PayRequestCallBack() {

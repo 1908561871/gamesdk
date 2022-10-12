@@ -1,6 +1,7 @@
 package com.zhibo8.game.sdk.core;
 
 import android.content.Context;
+import android.text.TextUtils;
 
 import com.zhibo8.game.sdk.base.ZB8CodeInfo;
 import com.zhibo8.game.sdk.base.ZB8Constant;
@@ -31,11 +32,11 @@ public class ZB8Game {
             ZBGlobalConfig.getInstance().setConfig(config);
             application = context.getApplicationContext();
             ZB8SPUtils.init(context);
-            if (config != null) {
-                ZB8LogUtils.isDebug(config.debug);
-            }
+            ZB8LogUtils.isDebug(config.isDebug());
         }
     }
+
+
 
     public static Config builder() {
         return new Config();
@@ -75,6 +76,7 @@ public class ZB8Game {
 
     public static class Config {
         String appId;
+        String serverKey;
         boolean debug;
 
         public Config setAppId(String appId) {
@@ -88,6 +90,15 @@ public class ZB8Game {
             return this;
         }
 
+        public String getServerKey() {
+            return serverKey;
+        }
+
+        public Config setServerKey(String serverKey) {
+            this.serverKey = serverKey;
+            return this;
+        }
+
         public String getAppId() {
             return appId;
         }
@@ -98,6 +109,13 @@ public class ZB8Game {
         }
 
         public void init(Context context) {
+
+            if (TextUtils.isEmpty(appId)){
+                throw new  IllegalArgumentException("appid 不能为空");
+            }
+            if (TextUtils.isEmpty(serverKey)){
+                throw new  IllegalArgumentException("serverKey 不能为空");
+            }
             ZB8Game.init(context, this);
         }
 

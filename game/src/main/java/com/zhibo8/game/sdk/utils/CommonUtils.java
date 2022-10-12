@@ -1,5 +1,6 @@
 package com.zhibo8.game.sdk.utils;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -22,4 +23,12 @@ public class CommonUtils {
             e.printStackTrace();
         }
     }
+
+
+    public static void finishActivity(Activity activity){
+        if (activity != null){
+            activity.finish();
+        }
+    }
+
 }

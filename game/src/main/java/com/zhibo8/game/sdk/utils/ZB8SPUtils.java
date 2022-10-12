@@ -24,8 +24,17 @@ public class ZB8SPUtils {
         return sharedPreferences.getString(key, null);
     }
 
+    public static boolean getBoolean(String key) {
+        return sharedPreferences.getBoolean(key, false);
+    }
+
+
     public static void putString(String key, String value) {
         sharedPreferences.edit().putString(key, value).commit();
     }
 
+
+    public static void putBoolean(String key, boolean value) {
+        sharedPreferences.edit().putBoolean(key, value).commit();
+    }
 }

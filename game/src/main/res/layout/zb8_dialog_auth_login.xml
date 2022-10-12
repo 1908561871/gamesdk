@@ -66,17 +66,17 @@
                     android:layout_marginBottom="20dp">
 
                     <CheckBox
+                        android:includeFontPadding="false"
                         android:id="@+id/cb_agreement"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="2dp"
                         android:button="@null"
                         android:drawableLeft="@drawable/ic_ck_agreement_selector"
-                        android:gravity="center_horizontal"
+                        android:gravity="center"
                         android:paddingLeft="7dp"
-                        android:paddingRight="7dp"
-                        android:textSize="13sp"
-                        app:layout_constraintBaseline_toBaselineOf="@id/tv_privacy"
+                        android:paddingRight="5dp"
+                        android:textSize="12sp"
                         app:layout_constraintEnd_toStartOf="@id/tv_privacy"
                         app:layout_constraintHorizontal_bias="0"
                         app:layout_constraintHorizontal_chainStyle="packed"
@@ -84,13 +84,13 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <TextView
+                        app:layout_constraintBaseline_toBaselineOf="@id/cb_agreement"
                         android:id="@+id/tv_privacy"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:includeFontPadding="false"
                         android:textColor="@color/color_333333"
-                        android:textSize="13dp"
+                        android:textSize="13sp"
                         app:layout_constrainedWidth="true"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toEndOf="@id/cb_agreement"

@@ -15,12 +15,12 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.zhibo8.game.sdk.R;
+import com.zhibo8.game.sdk.base.BaseDialogFragment;
 import com.zhibo8.game.sdk.base.ZB8CodeInfo;
 import com.zhibo8.game.sdk.base.ZB8Constant;
-import com.zhibo8.game.sdk.base.ZB8LoginRequestCallBack;
-import com.zhibo8.game.sdk.base.BaseDialogFragment;
 import com.zhibo8.game.sdk.base.ZB8LoadingLayout;
 import com.zhibo8.game.sdk.base.ZB8LoadingView;
+import com.zhibo8.game.sdk.base.ZB8LoginRequestCallBack;
 import com.zhibo8.game.sdk.core.ZBGlobalConfig;
 import com.zhibo8.game.sdk.net.ZB8OkHttpUtils;
 import com.zhibo8.game.sdk.utils.AnimatorUtils;
@@ -61,7 +61,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
         if (ZB8LoginManager.getInstance().hasLogin()) {
             getAccessToken(null, ZB8LoginManager.getInstance().getRefreshToken());
         } else {
-            getAuthInfo();
+            getAuthPageInfo();
         }
     }
 
@@ -154,13 +154,13 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
             map.put("grant_type", "authorization_code");
         }
         map.put("appid", appid);
-        ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/api/m_game_auth/accessToken", map, new ZB8OkHttpUtils.OkHttpCallBackListener() {
+        ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/api/m_game_auth/accessToken", map,getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
 
             @Override
-            public void failure(Exception e) {
-                showError();
+            public void failure(Exception e) throws Exception{
                 callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
-                ZB8LogUtils.d("授权失败");
+                ZB8LogUtils.d("获取token失败");
+                showError();
             }
 
             @Override
@@ -172,13 +172,13 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                         String access_token = data.optString("access_token");
                         String refresh_token = data.optString("refresh_token");
                         getUserInfo(access_token, refresh_token);
+                        return;
                     }
-                } else {
-                    showError();
-                    ZB8LogUtils.d("授权失败");
-                    callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
                 }
-
+                ZB8LoginManager.getInstance().logout();
+                ZB8LogUtils.d("获取token失败,重新调用授权登录弹窗");
+                callBack.onFailure(ZB8CodeInfo.CODE_FAILURE_TOKEN, ZB8CodeInfo.MSG_FAILURE_TOKEN);
+                getAuthPageInfo();
             }
         });
     }
@@ -189,9 +189,9 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
         map.put("access_token", access_token);
         map.put("appid", ZBGlobalConfig.getInstance().getConfig().getAppId());
 
-        ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/api/m_game_auth/userInfo", map, new ZB8OkHttpUtils.OkHttpCallBackListener() {
+        ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/api/m_game_auth/userInfo", map,getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
-            public void failure(Exception e) {
+            public void failure(Exception e) throws Exception{
                 callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
                 ZB8LogUtils.d("获取用户信息失败");
                 showError();
@@ -216,13 +216,12 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                                 + " open_id = " + data.optString("open_id")
                         );
                         callBack.onSuccess(wrapper);
+                        return;
                     }
-                } else {
-                    showError();
-                    ZB8LogUtils.d("获取用户信息失败");
-                    callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
                 }
-
+                ZB8LogUtils.d("获取用户信息失败："+json);
+                callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
+                showError();
             }
         });
     }
@@ -272,12 +271,13 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
     }
 
 
-    private void getAuthInfo() {
+    private void getAuthPageInfo() {
         mLoadingView.showLoading();
-        ZB8OkHttpUtils.getInstance().doPost(ZB8Constant.BASE_URL + "/api/m_game_auth/page", null, new ZB8OkHttpUtils.OkHttpCallBackListener() {
+        ZB8OkHttpUtils.getInstance().doPost(ZB8Constant.BASE_URL + "/api/m_game_auth/page", null,getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
-            public void failure(Exception e) {
+            public void failure(Exception e) throws Exception{
                 mLoadingView.showError();
+                callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE,ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
             }
 
             @Override
@@ -292,12 +292,11 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                         String user_agreement = data.optString("user_agreement");
                         mTvAuthorize.setText(btnText);
                         ZB8HtmlUtils.setHtml(getContext().getString(R.string.new_view_agreement_privacy, user_agreement, privacy_policy), mTvPrivacy);
-                    } else {
-                        showError();
+                        return;
                     }
-                } else {
-                    showError();
                 }
+                callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE,ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
+                showError();
             }
         });
 
@@ -309,7 +308,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
         if (ZB8LoginManager.getInstance().hasLogin()) {
             getAccessToken(null, ZB8LoginManager.getInstance().getRefreshToken());
         } else {
-            getAuthInfo();
+            getAuthPageInfo();
         }
     }
 
@@ -320,4 +319,5 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
             mLoadingView.showContent();
         }
     }
+
 }
