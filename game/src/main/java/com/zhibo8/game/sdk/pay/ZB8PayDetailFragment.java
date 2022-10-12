@@ -254,7 +254,7 @@ public class ZB8PayDetailFragment extends BaseDialogFragment implements ZB8Loadi
             JSONObject jsonObject = new JSONObject(content);
             IWXAPI api = WXAPIFactory.createWXAPI(getActivity(), "", false);
             if (!api.isWXAppInstalled()){
-
+                Toast.makeText(getActivity(),"请先安装微信",Toast.LENGTH_SHORT).show();
                 return;
             }
             api.registerApp("");

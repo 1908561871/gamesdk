@@ -6,6 +6,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.zhibo8.game.sdk.base.ZB8CodeInfo;
 import com.zhibo8.game.sdk.base.ZB8LoginRequestCallBack;
 import com.zhibo8.game.sdk.base.ZB8PayRequestCallBack;
 import com.zhibo8.game.sdk.core.ZB8Game;
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onFailure(int code, String info) {
                 Toast.makeText(MainActivity.this,info,Toast.LENGTH_SHORT).show();
+
             }
 
             @Override
@@ -70,11 +72,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ZB8Game.login(MainActivity.this, new ZB8LoginRequestCallBack() {
             @Override
             public void onFailure(int code, String info) {
+                if (code == ZB8CodeInfo.CODE_FAILURE_TOKEN){
+                    //获取token失败，如果是已经登录的情况下需要退出登录状态，重新拉起授权界面
+                }
                 Toast.makeText(MainActivity.this,info,Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onSuccess(JSONObject jsonObject) {
+                Toast.makeText(MainActivity.this,"登录成功",Toast.LENGTH_SHORT).show();
 
                 String access_token = jsonObject.optString("access_token");
                 String nickname = jsonObject.optString("nickname");

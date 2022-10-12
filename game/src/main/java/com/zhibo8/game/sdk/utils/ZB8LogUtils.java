@@ -5,7 +5,7 @@ import android.util.Log;
 
 public class ZB8LogUtils {
 
-    public static String customTagPrefix = "zb8_log";
+    public static String customTagPrefix = "zhibo8_log";
     private static boolean isDebug = true;
 
     private ZB8LogUtils() {

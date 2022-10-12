@@ -9,7 +9,7 @@
     <application>
 
         <activity
-            android:screenOrientation="landscape"
+            android:screenOrientation="portrait"
             android:name=".base.ZB8ContainerActivity"
             android:theme="@style/Theme.ActivityDialogStyle" />
 
