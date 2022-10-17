@@ -89,38 +89,34 @@ public class ZB8ContainerActivity extends AppCompatActivity {
 
     private void toAuthorize() {
         zhibo8SsoHandler = new ZB8SsoHandler(this);
-        if (AppUtils.isInstall(this, ZB8Constant.PACKAGE_NAME)) {
-            ZB8AuthLoginFragment zb8AuthLoginFragment = ZB8AuthLoginFragment.getInstance();
-            zb8AuthLoginFragment.setZhibo8SsoHandler(zhibo8SsoHandler);
-            zb8AuthLoginFragment.setCallBack(new ZB8LoginRequestCallBack() {
-                @Override
-                public void onSuccess(JSONObject json) {
-                    zb8AuthLoginFragment.dismiss();
-                    if (ZB8LoginManager.getInstance().hasLogin()){
-                        loginCallBack.onSuccess(json);
-                        finish();
-                    }else {
-                        toVerify(json);
-                    }
-                }
+        ZB8AuthLoginFragment zb8AuthLoginFragment = ZB8AuthLoginFragment.getInstance();
+        zb8AuthLoginFragment.setZhibo8SsoHandler(zhibo8SsoHandler);
+        zb8AuthLoginFragment.setCallBack(new ZB8LoginRequestCallBack() {
+            @Override
+            public void onSuccess(JSONObject json) {
+                zb8AuthLoginFragment.dismiss();
 
-                @Override
-                public void onFailure(int code, String info) {
-                    loginCallBack.onFailure(code, info);
-                }
-
-                @Override
-                public void onCancel() {
-                    loginCallBack.onCancel();
+                if (json.optBoolean("need_verify",false)){
+                    toVerify(json);
+                }else {
+                    loginCallBack.onSuccess(json);
                     finish();
                 }
-            });
-            zb8AuthLoginFragment.show(getSupportFragmentManager(),"authorize");
-        } else {
-            CommonUtils.goToMarket(this, ZB8Constant.PACKAGE_NAME);
-            loginCallBack.onFailure(ZB8CodeInfo.CODE_INSTALL_LATEST_ZHIBO8, ZB8CodeInfo.MSG_INSTALL_LATEST_ZHIBO8);
-            finish();
-        }
+
+            }
+
+            @Override
+            public void onFailure(int code, String info) {
+                loginCallBack.onFailure(code, info);
+            }
+
+            @Override
+            public void onCancel() {
+                loginCallBack.onCancel();
+                finish();
+            }
+        });
+        zb8AuthLoginFragment.show(getSupportFragmentManager(),"authorize");
     }
 
 

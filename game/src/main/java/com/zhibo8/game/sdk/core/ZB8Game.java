@@ -13,6 +13,7 @@ import com.zhibo8.game.sdk.bean.ZBOrderInfo;
 import com.zhibo8.game.sdk.login.ZB8LoginManager;
 import com.zhibo8.game.sdk.utils.ZB8LogUtils;
 import com.zhibo8.game.sdk.utils.ZB8SPUtils;
+import com.zhibo8.game.sdk.verify.ZBHeartBeatManager;
 
 /**
  * @author : ZhangWeiBo
@@ -54,6 +55,7 @@ public class ZB8Game {
 
     public static void logout() {
         ZB8LoginManager.getInstance().logout();
+        ZBHeartBeatManager.getInstance().clear();
     }
 
 

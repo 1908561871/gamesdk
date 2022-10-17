@@ -24,9 +24,11 @@ import com.zhibo8.game.sdk.base.ZB8LoginRequestCallBack;
 import com.zhibo8.game.sdk.core.ZBGlobalConfig;
 import com.zhibo8.game.sdk.net.ZB8OkHttpUtils;
 import com.zhibo8.game.sdk.utils.AnimatorUtils;
+import com.zhibo8.game.sdk.utils.CommonUtils;
 import com.zhibo8.game.sdk.utils.DisplayUtils;
 import com.zhibo8.game.sdk.utils.ZB8HtmlUtils;
 import com.zhibo8.game.sdk.utils.ZB8LogUtils;
+import com.zhibo8.game.sdk.verify.ZBHeartBeatManager;
 
 import org.json.JSONObject;
 
@@ -154,12 +156,12 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
             map.put("grant_type", "authorization_code");
         }
         map.put("appid", appid);
-        ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/api/m_game_auth/accessToken", map,getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
+        ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/sdk/m_game_auth/accessToken", map,getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
 
             @Override
             public void failure(Exception e) throws Exception{
                 callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
-                ZB8LogUtils.d("获取token失败");
+                ZB8LogUtils.d("获取token失败:"+e.getMessage());
                 showError();
             }
 
@@ -189,7 +191,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
         map.put("access_token", access_token);
         map.put("appid", ZBGlobalConfig.getInstance().getConfig().getAppId());
 
-        ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/api/m_game_auth/userInfo", map,getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
+        ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/sdk/m_game/userInfo", map,getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
             public void failure(Exception e) throws Exception{
                 callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
@@ -215,7 +217,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                                 + " pic = " + data.optString("pic")
                                 + " open_id = " + data.optString("open_id")
                         );
-                        callBack.onSuccess(wrapper);
+                        checkUserVerify(access_token,wrapper);
                         return;
                     }
                 }
@@ -255,7 +257,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
             return null;
         }
         final PopupWindow popupWindow = new PopupWindow(pop, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        popupWindow.showAsDropDown(anchor, -anchor.getWidth() / 8, -anchor.getHeight() * 3);
+        popupWindow.showAsDropDown(anchor, -anchor.getWidth() / 8, -DisplayUtils.dipToPix(getActivity(),30) - anchor.getMeasuredHeight());
         new Handler().postDelayed(new Runnable() {
             public void run() {
                 //最好在使用的生命周期里使用者自己去dismiss,否则这边虽然加了try catch不会应用挂掉,但还是存在一定的泄露问题.
@@ -273,9 +275,10 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
 
     private void getAuthPageInfo() {
         mLoadingView.showLoading();
-        ZB8OkHttpUtils.getInstance().doPost(ZB8Constant.BASE_URL + "/api/m_game_auth/page", null,getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
+        ZB8OkHttpUtils.getInstance().doPost(ZB8Constant.BASE_URL + "/sdk/m_game_auth/page", null,getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
             public void failure(Exception e) throws Exception{
+                ZB8LogUtils.d("获取授权窗口失败："+e.getMessage());
                 mLoadingView.showError();
                 callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE,ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
             }
@@ -295,6 +298,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                         return;
                     }
                 }
+                ZB8LogUtils.d("获取授权窗口失败："+json);
                 callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE,ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
                 showError();
             }
@@ -302,6 +306,56 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
 
     }
 
+
+    /**
+     * 检查用户是否认证
+     */
+    private void checkUserVerify(String token,JSONObject repJson) {
+        mLoadingView.showLoading();
+        Map<String, String> map = new HashMap<>();
+        map.put("access_token", token);
+        map.put("appid", ZBGlobalConfig.getInstance().getConfig().getAppId());
+        ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/sdk/m_game/isAuth", map, getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
+            @Override
+            public void failure(Exception e) throws Exception {
+                ZB8LogUtils.d("获取用户认证信息失败："+e.getMessage());
+                callBack.onFailure(ZB8CodeInfo.CODE_VERIFY_FAILURE, ZB8CodeInfo.MSG_VERIFY_FAILURE);
+                mLoadingView.showError();
+            }
+
+            @Override
+            public void success(String json) throws Exception {
+                JSONObject jsonObject = new JSONObject(json);
+                if (TextUtils.equals(jsonObject.optString("status"), "success")) {
+                    JSONObject data = jsonObject.optJSONObject("data");
+                    if (data != null) {
+                        int is_auth = data.optInt("is_auth");
+                        int is_adulth = data.optInt("is_adulth");
+                        if (is_auth == 1) {
+                            if (is_adulth == 1) {
+                                repJson.put("need_verify",false);
+                                ZB8LogUtils.d("用户认证成功，且用户已成年");
+                                ZBHeartBeatManager.getInstance().setOnlineId(data.optString("online_id"));
+                                callBack.onSuccess(repJson);
+                            } else {
+                                //未成年
+                                ZB8LogUtils.d("用户认证成功，用户未成年");
+                                callBack.onFailure(ZB8CodeInfo.CODE_TEENAGER_PROTECT, ZB8CodeInfo.MSG_CODE_TEENAGER_PROTECT);
+                                CommonUtils.finishActivity(getActivity());
+                            }
+                        } else {
+                            repJson.put("need_verify",true);
+                            callBack.onSuccess(repJson);
+                        }
+                        return;
+                    }
+                }
+                ZB8LogUtils.d("获取用户认证信息失败："+json);
+                callBack.onFailure(ZB8CodeInfo.CODE_VERIFY_FAILURE, ZB8CodeInfo.MSG_VERIFY_FAILURE);
+                mLoadingView.showError();
+            }
+        });
+    }
 
     @Override
     public void onRetry() {

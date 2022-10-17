@@ -63,7 +63,6 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        checkUserVerify();
     }
 
     @Override
@@ -78,6 +77,7 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
         mTvSubmit.setOnClickListener(this);
         mIvClose.setOnClickListener(this);
         mLoadingView.setOnRetryClickListener(this);
+        mLoadingView.showContent();
     }
 
     @Override
@@ -95,50 +95,7 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
         }
     }
 
-    /**
-     * 检查用户是否认证
-     */
-    private void checkUserVerify() {
-        mLoadingView.showLoading();
-        Map<String, String> map = new HashMap<>();
-        map.put("access_token", mToken);
-        map.put("appid", ZBGlobalConfig.getInstance().getConfig().getAppId());
-        ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/sdk/m_game/isAuth", map, getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
-            @Override
-            public void failure(Exception e) throws Exception {
-                callBack.onFailure(ZB8CodeInfo.CODE_VERIFY_FAILURE, ZB8CodeInfo.MSG_VERIFY_FAILURE);
-                mLoadingView.showError();
-            }
 
-            @Override
-            public void success(String json) throws Exception {
-                JSONObject jsonObject = new JSONObject(json);
-                if (TextUtils.equals(jsonObject.optString("status"), "success")) {
-                    JSONObject data = jsonObject.optJSONObject("data");
-                    if (data != null) {
-                        int is_auth = data.optInt("is_auth");
-                        int is_adulth = data.optInt("is_adulth");
-                        if (is_auth == 1) {
-                            if (is_adulth == 1) {
-                                ZB8LogUtils.d("用户认证成功，且用户已成年");
-                                callBack.onSuccess(mJsonEntity);
-                            } else {
-                                //未成年
-                                ZB8LogUtils.d("用户认证成功，用户未成年");
-                                callBack.onFailure(ZB8CodeInfo.CODE_TEENAGER_PROTECT, ZB8CodeInfo.MSG_CODE_TEENAGER_PROTECT);
-                                CommonUtils.finishActivity(getActivity());
-                            }
-                        } else {
-                            mLoadingView.showContent();
-                        }
-                        return;
-                    }
-                }
-                callBack.onFailure(ZB8CodeInfo.CODE_VERIFY_FAILURE, ZB8CodeInfo.MSG_VERIFY_FAILURE);
-                mLoadingView.showError();
-            }
-        });
-    }
 
     @Override
     public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -166,6 +123,7 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
         ZB8OkHttpUtils.getInstance().doPost(BASE_URL + "/sdk/m_game/auth", map, getRequestTag(), new ZB8OkHttpUtils.OkHttpCallBackListener() {
             @Override
             public void failure(Exception e) throws Exception {
+                ZB8LogUtils.d("提交认证失败："+e.getMessage());
                 mLoadingView.showContent();
                 callBack.onFailure(ZB8CodeInfo.CODE_VERIFY_FAILURE, ZB8CodeInfo.MSG_VERIFY_FAILURE);
             }
@@ -186,8 +144,10 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
                         CommonUtils.finishActivity(getActivity());
                     }
                 } else {
+                    ZB8LogUtils.d("提交认证失败："+json);
                     mLoadingView.showContent();
-                    callBack.onFailure(ZB8CodeInfo.CODE_VERIFY_FAILURE, ZB8CodeInfo.MSG_VERIFY_FAILURE);
+                    String msg = jsonObject.optString("msg");
+                    callBack.onFailure(ZB8CodeInfo.CODE_VERIFY_FAILURE,TextUtils.isEmpty(msg)? ZB8CodeInfo.MSG_VERIFY_FAILURE:msg);
                 }
             }
         });
@@ -200,6 +160,5 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
 
     @Override
     public void onRetry() {
-        checkUserVerify();
     }
 }

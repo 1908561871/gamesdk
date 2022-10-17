@@ -10,11 +10,15 @@ import com.zhibo8.game.sdk.base.ZB8CodeInfo;
 import com.zhibo8.game.sdk.base.ZB8LoginRequestCallBack;
 import com.zhibo8.game.sdk.base.ZB8PayRequestCallBack;
 import com.zhibo8.game.sdk.core.ZB8Game;
+import com.zhibo8.game.sdk.verify.ZBHeartBeatManager;
 
 import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    int a;
+    int b;
+    int c = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,10 +44,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    int i = 240;
     private void pay() {
 
-        ZB8Game.pay(MainActivity.this, "GM202210101665389978" + (i++), "1", new ZB8PayRequestCallBack() {
+        ZB8Game.pay(MainActivity.this, "GM202210101665389978" + System.currentTimeMillis(), "1", new ZB8PayRequestCallBack() {
             @Override
             public void onFailure(int code, String info) {
                 Toast.makeText(MainActivity.this,info,Toast.LENGTH_SHORT).show();

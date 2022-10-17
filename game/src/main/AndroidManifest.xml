@@ -9,8 +9,9 @@
     <application>
 
         <activity
-            android:screenOrientation="portrait"
+            android:screenOrientation="landscape"
             android:name=".base.ZB8ContainerActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
             android:theme="@style/Theme.ActivityDialogStyle" />
 
         <activity android:name=".pay.wechat.WXPayEntryActivity" />

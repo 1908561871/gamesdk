@@ -1,6 +1,7 @@
 package com.zhibo8.game.sdk.base;
 
 import com.zhibo8.game.sdk.login.ZB8LoginManager;
+import com.zhibo8.game.sdk.verify.ZBHeartBeatManager;
 
 import org.json.JSONObject;
 
@@ -28,6 +29,7 @@ public class ZB8LoginProxyRequestCallBack implements ZB8LoginRequestCallBack {
             String access_token = jsonObject.optString("access_token");
             String refresh_token = jsonObject.optString("refresh_token");
             ZB8LoginManager.getInstance().login(access_token, refresh_token);
+            ZBHeartBeatManager.getInstance().start();
         } catch (Exception e) {
             e.printStackTrace();
         }
