@@ -68,7 +68,7 @@
 
 
                 <EditText
-                    android:inputType="numberSigned"
+                    android:digits="0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
                     android:id="@+id/et_user_identify"
                     android:layout_width="match_parent"
                     android:layout_height="44dp"
