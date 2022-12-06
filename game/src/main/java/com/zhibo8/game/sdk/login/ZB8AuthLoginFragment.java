@@ -168,6 +168,8 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
             @Override
             public void success(String json) throws Exception {
                 JSONObject jsonObject = new JSONObject(json);
+                String msg = jsonObject.optString("msg");
+
                 if (TextUtils.equals(jsonObject.optString("status"), "success")) {
                     JSONObject data = jsonObject.optJSONObject("data");
                     if (data != null) {
@@ -179,7 +181,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                 }
                 ZB8LoginManager.getInstance().logout();
                 ZB8LogUtils.d("获取token失败,重新调用授权登录弹窗");
-                callBack.onFailure(ZB8CodeInfo.CODE_FAILURE_TOKEN, ZB8CodeInfo.MSG_FAILURE_TOKEN);
+                callBack.onFailure(ZB8CodeInfo.CODE_FAILURE_TOKEN, !TextUtils.isEmpty(msg) ? msg : ZB8CodeInfo.MSG_FAILURE_TOKEN);
                 getAuthPageInfo();
             }
         });
@@ -203,6 +205,8 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
             public void success(String json) throws Exception {
                 JSONObject jsonObject = new JSONObject(json);
                 JSONObject wrapper = new JSONObject();
+                String msg = jsonObject.optString("msg");
+
                 if (TextUtils.equals(jsonObject.optString("status"), "success")) {
                     JSONObject data = jsonObject.optJSONObject("data");
                     if (data != null) {
@@ -222,7 +226,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                     }
                 }
                 ZB8LogUtils.d("获取用户信息失败："+json);
-                callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
+                callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, !TextUtils.isEmpty(msg) ? msg : ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
                 showError();
             }
         });
@@ -286,6 +290,8 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
             @Override
             public void success(String json) throws Exception {
                 JSONObject result = new JSONObject(json);
+                String msg = result.optString("msg");
+
                 if (TextUtils.equals(result.optString("status"), "success")) {
                     JSONObject data = result.optJSONObject("data");
                     if (data != null) {
@@ -299,7 +305,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                     }
                 }
                 ZB8LogUtils.d("获取授权窗口失败："+json);
-                callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE,ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
+                callBack.onFailure(ZB8CodeInfo.CODE_AUTHORIZE_FAILURE, !TextUtils.isEmpty(msg) ? msg : ZB8CodeInfo.MSG_AUTHORIZE_FAILURE);
                 showError();
             }
         });
@@ -326,6 +332,8 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
             @Override
             public void success(String json) throws Exception {
                 JSONObject jsonObject = new JSONObject(json);
+                String msg = jsonObject.optString("msg");
+
                 if (TextUtils.equals(jsonObject.optString("status"), "success")) {
                     JSONObject data = jsonObject.optJSONObject("data");
                     if (data != null) {
@@ -340,7 +348,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                             } else {
                                 //未成年
                                 ZB8LogUtils.d("用户认证成功，用户未成年");
-                                callBack.onFailure(ZB8CodeInfo.CODE_TEENAGER_PROTECT, ZB8CodeInfo.MSG_CODE_TEENAGER_PROTECT);
+                                callBack.onFailure(ZB8CodeInfo.CODE_TEENAGER_PROTECT, !TextUtils.isEmpty(msg) ? msg : ZB8CodeInfo.MSG_CODE_TEENAGER_PROTECT);
                                 CommonUtils.finishActivity(getActivity());
                             }
                         } else {
@@ -351,7 +359,7 @@ public class ZB8AuthLoginFragment extends BaseDialogFragment implements ZB8Loadi
                     }
                 }
                 ZB8LogUtils.d("获取用户认证信息失败："+json);
-                callBack.onFailure(ZB8CodeInfo.CODE_VERIFY_FAILURE, ZB8CodeInfo.MSG_VERIFY_FAILURE);
+                callBack.onFailure(ZB8CodeInfo.CODE_VERIFY_FAILURE,!TextUtils.isEmpty(msg) ? msg : ZB8CodeInfo.MSG_VERIFY_FAILURE);
                 mLoadingView.showError();
             }
         });

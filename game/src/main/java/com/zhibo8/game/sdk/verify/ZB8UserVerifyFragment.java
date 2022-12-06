@@ -131,6 +131,7 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
             @Override
             public void success(String json) throws Exception {
                 JSONObject jsonObject = new JSONObject(json);
+                String msg = jsonObject.optString("msg");
                 if (TextUtils.equals(jsonObject.optString("status"), "success")) {
                     JSONObject data = jsonObject.optJSONObject("data");
                     int is_adulth = data.optInt("is_adulth");
@@ -140,13 +141,12 @@ public class ZB8UserVerifyFragment extends BaseDialogFragment implements TextWat
                     } else {
                         //未成年
                         ZB8LogUtils.d("用户认证成功，用户未成年");
-                        callBack.onFailure(ZB8CodeInfo.CODE_TEENAGER_PROTECT, ZB8CodeInfo.MSG_CODE_TEENAGER_PROTECT);
+                        callBack.onFailure(ZB8CodeInfo.CODE_TEENAGER_PROTECT, !TextUtils.isEmpty(msg) ? msg : ZB8CodeInfo.MSG_CODE_TEENAGER_PROTECT);
                         CommonUtils.finishActivity(getActivity());
                     }
                 } else {
                     ZB8LogUtils.d("提交认证失败："+json);
                     mLoadingView.showContent();
-                    String msg = jsonObject.optString("msg");
                     callBack.onFailure(ZB8CodeInfo.CODE_VERIFY_FAILURE,TextUtils.isEmpty(msg)? ZB8CodeInfo.MSG_VERIFY_FAILURE:msg);
                 }
             }
